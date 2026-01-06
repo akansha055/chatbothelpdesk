@@ -1,13 +1,13 @@
 :root {
-    --bg-color: #f3f0f7;
-    --primary-purple: #6d28d9;
-    --light-purple: #ede9fe;
-    --text-main: #1e1b4b;
+    --bg-color: #f3f7ff;         
+    --primary-blue: #2563eb;      
+    --light-blue: #dbeafe;        
+    --text-main: #1e3a8a;         
     --white: #ffffff;
 }
 
 body {
-    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Montserrat', Roboto, sans-serif;
     background-color: var(--bg-color);
     margin: 0;
     display: flex;
@@ -19,13 +19,13 @@ header {
     text-align: center;
     padding: 15px;
     background: var(--white);
-    border-bottom: 1px solid var(--light-purple);
+    border-bottom: 1px solid var(--light-blue);
 }
 
 h1 {
     margin: 0;
     font-size: 1.4rem;
-    color: var(--primary-purple);
+    color: var(--primary-blue);
 }
 
 #chat-history {
@@ -50,7 +50,7 @@ h1 {
 
 .user-message {
     align-self: flex-end;
-    background-color: var(--primary-purple);
+    background-color: var(--primary-blue);
     color: var(--white);
     border-bottom-right-radius: 2px;
 }
@@ -58,14 +58,15 @@ h1 {
 .ai-message {
     align-self: flex-start;
     background-color: var(--white);
-    border: 1px solid var(--light-purple);
+    border: 1px solid var(--light-blue);
     border-bottom-left-radius: 2px;
+    color: var(--text-main);
 }
 
 .input-container {
     background: var(--white);
     padding: 20px;
-    border-top: 1px solid var(--light-purple);
+    border-top: 1px solid var(--light-blue);
 }
 
 #chat-form {
@@ -82,8 +83,8 @@ h1 {
     justify-content: center;
     width: 42px;
     height: 42px;
-    background-color: var(--light-purple);
-    color: var(--primary-purple);
+    background-color: var(--light-blue);
+    color: var(--primary-blue);
     border-radius: 50%;
     cursor: pointer;
     font-size: 24px;
@@ -99,7 +100,7 @@ h1 {
 }
 
 #send-btn {
-    background: var(--primary-purple);
+    background: var(--primary-blue);
     color: var(--white);
     border: none;
     padding: 10px 20px;
@@ -111,7 +112,8 @@ h1 {
 #loader {
     text-align: center;
     font-size: 12px;
-    color: var(--primary-purple);
+    color: var(--primary-blue);
     display: none;
     margin-bottom: 10px;
 }
+
