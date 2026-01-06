@@ -19,13 +19,14 @@ FEATURES
 <br>
 LEARNINGS
 <br>
-Application of multimodal AI system.
+ Application of multimodal AI system.
 <br>
-Integrating LLM & VLM.
+ Integrating LLM & VLM.
 <br>
-API Interface.
+ API Interface.
 <br>
-Deployment of AI-powered web applications.
+ Deployment of AI-powered web applications.
+<br>
 <br>
 Frontend can be utilised using html.
    
