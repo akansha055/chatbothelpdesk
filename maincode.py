@@ -38,18 +38,17 @@ response2 = client.chat.completions.create(
   extra_body={"reasoning": {"enabled": True}}
 )
 
-import os
-import base64
+
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
+import os
+import base64
 import json
-import io
-
 
 HELPDESK_PROMPT = (
-    "You are a friendly and knowledgeable **college helpdesk assistant**. "
+    "You are a friendly and knowledgeable college helpdesk assistant. "
     "You help students with:\n"
     "- admissions, eligibility, and application deadlines\n"
     "- course details, credits, and timetables\n"
@@ -63,17 +62,20 @@ HELPDESK_PROMPT = (
     "and suggest what office or email they should contact.\n"
 )
 
+MODEL_NAME = "nvidia/nemotron-nano-12b-v2-vl:free"  # multimodal model[web:52][web:55]
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="<OPENROUTER_API_KEY>"
+    api_key="<OPENROUTER_API_KEY>",  # or os.getenv("OPENROUTER_API_KEY")
 )
 
 @app.get("/")
 async def read_index():
-    return FileResponse('frontend.html')
+    return FileResponse("frontend.html")
+
 @app.post("/chat")
 async def chat(
     message: str = Form(...),
@@ -81,17 +83,19 @@ async def chat(
     file: UploadFile = File(None),
 ):
     messages = json.loads(history)
+
+    # Ensure system prompt for helpdesk behavior
     if not messages or messages[0].get("role") != "system":
         messages.insert(0, {"role": "system", "content": HELPDESK_PROMPT})
     else:
         messages[0]["content"] = HELPDESK_PROMPT
 
+    # Build user content (text + optional file)
     content = [{"type": "text", "text": message}]
 
     if file:
         file_bytes = await file.read()
         if file.content_type and file.content_type.startswith("image/"):
-            
             base64_image = base64.b64encode(file_bytes).decode("utf-8")
             content.append({
                 "type": "image_url",
@@ -119,9 +123,11 @@ async def chat(
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=messages,
+        # extra_body={"include_reasoning": True},  # optional for reasoning traces[web:12][web:54]
     )
 
     assistant_message = response.choices[0].message
+
     if isinstance(assistant_message.content, list):
         text_parts = [
             part.get("text", "")
