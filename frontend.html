@@ -50,23 +50,41 @@
             formData.append('history', JSON.stringify(chatHistory));
             if (file) formData.append('file', file);
 
+            const RENDER_URL = 'https://chatbothelpdesk-main.onrender.com/chat';
+            const LOCAL_URL = 'http://127.0.0.1:8000/chat';
+
+            let res;
             try {
-                const res = await fetch('/chat', { method: 'POST', body: formData });
-                const data = await res.json();
+                console.log("Attempting to connect to Render...");
+                res = await fetch(RENDER_URL, { method: 'POST', body: formData });
                 
-                chatHistory.push({"role": "user", "content": text});
-                chatHistory.push({"role": "assistant", "content": data.response});
-                
-                historyDiv.innerHTML += `<div class="message ai-message"><b>AI:</b> ${data.response}</div>`;
+                if (!res.ok) throw new Error('Render failed');
             } catch (error) {
-                console.error("Error:", error);
-                historyDiv.innerHTML += `<div class="message ai-message" style="color: red;"><b>AI:</b> Sorry, Try again later.</div>`;
+                console.warn("Render unavailable, falling back to Localhost...");
+                try {
+                    res = await fetch(LOCAL_URL, { method: 'POST', body: formData });
+                } catch (localError) {
+                    console.error("Both backends failed.");
+                }
+            }
+
+            try {
+                if (res && res.ok) {
+                    const data = await res.json();
+                    chatHistory.push({"role": "user", "content": text});
+                    chatHistory.push({"role": "assistant", "content": data.response});
+                    historyDiv.innerHTML += `<div class="message ai-message"><b>AI:</b> ${data.response}</div>`;
+                } else {
+                    throw new Error("No response from any server");
+                }
+            } catch (error) {
+                historyDiv.innerHTML += `<div class="message ai-message" style="color: red;"><b>AI:</b> Connection failed. Ensure your backend is running.</div>`;
             } finally {
                 loader.style.display = 'none';
                 fileInput.value = ''; 
                 historyDiv.scrollTop = historyDiv.scrollHeight;
             }
-        }; 
+        };
         fileInput.onchange = () => {
             if (fileInput.files.length > 0) {
                 alert("File selected: " + fileInput.files[0].name);
