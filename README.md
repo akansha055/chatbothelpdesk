@@ -18,8 +18,12 @@ FEATURES
 9. AI Orchestration : Openrouter API
 <br>
 LEARNINGS
-1. Application of multimodal AI system.
-2. Integrating LLM & VLM.
-3. API Interface.
-4. Deployment of AI-powered web applications.
+<br>
+Application of multimodal AI system.
+<br>
+Integrating LLM & VLM.
+<br>
+API Interface.
+<br>
+Deployment of AI-powered web applications.
    
