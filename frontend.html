@@ -1,1 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Chatbot</title>
+    <link rel="stylesheet" href="/static/style.css?v=1.1">
+</head>
+<body>
 
+    <header>
+        <h1>Academic Chatbot</h1>
+    </header>
+
+    <div id="chat-history">
+        <div class="message ai-message"><b>AI:</b> Hello! I'm here to help you. What can I do for you? Use the <b>+</b> to upload a file.</div>
+    </div>
+
+    <div id="loader" style="display: none; text-align: center; padding: 10px; color: #6d28d9; font-style: italic;">AI is thinking...</div>
+
+    <div class="input-container">
+        <form id="chat-form">
+            <label for="file-input" class="file-label">+</label>
+            <input type="file" id="file-input" accept="image/*,application/pdf" style="display: none;">
+            <input type="text" id="user-input" placeholder="Type here..." required autocomplete="off">
+            <button type="submit" id="send-btn">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const historyDiv = document.getElementById('chat-history');
+        const loader = document.getElementById('loader');
+        const fileInput = document.getElementById('file-input');
+
+        let chatHistory = [{"role": "system", "content": "You are a professional academic assistant."}];
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('user-input').value;
+            const file = fileInput.files[0];
+            
+            // 1. Add User Message to UI
+            historyDiv.innerHTML += `<div class="message user-message"><b>You:</b> ${text}</div>`;
+            document.getElementById('user-input').value = '';
+            loader.style.display = 'block';
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+
+            const formData = new FormData();
+            formData.append('message', text);
+            formData.append('history', JSON.stringify(chatHistory));
+            if (file) formData.append('file', file);
+
+            try {
+                const res = await fetch('/chat', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                // 2. Update Context Memory
+                chatHistory.push({"role": "user", "content": text});
+                chatHistory.push({"role": "assistant", "content": data.response});
+                
+                // 3. Add AI Response to UI
+                historyDiv.innerHTML += `<div class="message ai-message"><b>AI:</b> ${data.response}</div>`;
+            } catch (error) {
+                console.error("Error:", error);
+                historyDiv.innerHTML += `<div class="message ai-message" style="color: red;"><b>AI:</b> Sorry, I had trouble connecting to the server.</div>`;
+            } finally {
+                loader.style.display = 'none';
+                fileInput.value = ''; // Reset file input
+                historyDiv.scrollTop = historyDiv.scrollHeight;
+            }
+        }; // <--- This bracket was missing!
+
+        // Optional: Alert when a file is selected so you know it worked
+        fileInput.onchange = () => {
+            if (fileInput.files.length > 0) {
+                alert("File selected: " + fileInput.files[0].name);
+            }
+        };
+    </script>
+</body>
+</html>
