@@ -2,7 +2,10 @@ from openai import OpenAI
 
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",
-  api_key="<OPENROUTER_API_KEY>",
+  api_key=os.getenv("OPENROUTER_API_KEY"),
+  default_headers={"HTTP-Referer":" "HTTP-Referer": "https://college-helpdesk.onrender.com",
+        "X-Title": "College Helpdesk Assistant"
+        },
 )
 
 # First API call with reasoning
