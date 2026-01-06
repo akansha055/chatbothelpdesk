@@ -26,4 +26,6 @@ Integrating LLM & VLM.
 API Interface.
 <br>
 Deployment of AI-powered web applications.
+<br>
+Frontend can be utilised using html.
    
