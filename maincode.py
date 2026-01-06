@@ -2,7 +2,7 @@ from openai import OpenAI
 
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",
-  api_key="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",
+  api_key="<OPENROUTER_API_KEY>",
 )
 
 # First API call with reasoning
@@ -38,48 +38,42 @@ response2 = client.chat.completions.create(
   extra_body={"reasoning": {"enabled": True}}
 )
 
-import requests
-from bs4 import BeautifulSoup
-
-def fetch_website_text(url: str) -> str:
-    resp = requests.get(url, timeout=10)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    # Remove scripts/styles
-    for tag in soup(["script", "style", "noscript"]):
-        tag.decompose()
-
-    text = soup.get_text(separator="\n")
-    # Basic cleanup + truncate to avoid huge prompts
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    cleaned = "\n".join(lines)
-    return cleaned[:8000]  # keep first 8k chars
-
-from openai import OpenAI
 import os
 import base64
-import json
 from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from openai import OpenAI
+import json
+import io
+
+
+HELPDESK_PROMPT = (
+    "You are a friendly and knowledgeable **college helpdesk assistant**. "
+    "You help students with:\n"
+    "- admissions, eligibility, and application deadlines\n"
+    "- course details, credits, and timetables\n"
+    "- fees, scholarships, and payment options\n"
+    "- exam schedules, results, and revaluation\n"
+    "- campus facilities, clubs, and events\n\n"
+    "Guidelines:\n"
+    "- Use clear, simple language.\n"
+    "- Ask follow-up questions if the student’s request is unclear.\n"
+    "- If you are not sure or the information is not available, say so clearly "
+    "and suggest what office or email they should contact.\n"
+)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="."), name="static")
 
-# Mount your static files (CSS/JS)
-app.mount("/static", StaticFiles(directory="."),name="static")
-
-# Initialize OpenRouter Client
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="<OPENROUTER_API_KEY>"
 )
+
 @app.get("/")
 async def read_index():
-    # Serves your HTML frontend
     return FileResponse('frontend.html')
-  # put your website here
-TARGET_URL = "https://dtu.ac.in" 
 @app.post("/chat")
 async def chat(
     message: str = Form(...),
@@ -87,41 +81,43 @@ async def chat(
     file: UploadFile = File(None),
 ):
     messages = json.loads(history)
-
-    # Fetch website data (you can cache this in memory or a file)
-    site_text = fetch_website_text(TARGET_URL)
-
-    # System message that forces the model to use only that site
-    system_prompt = (
-        "You are a chatbot that answers ONLY using information from the "
-        f"following website content. If the answer is not in this content, say "
-        "'I don't know based on the provided website.'\n\n"
-        f"WEBSITE CONTENT:\n{site_text}"
-    )
-
-    # Ensure first message is a system message for this behavior
     if not messages or messages[0].get("role") != "system":
-        messages.insert(0, {"role": "system", "content": system_prompt})
+        messages.insert(0, {"role": "system", "content": HELPDESK_PROMPT})
     else:
-        messages[0]["content"] = system_prompt
+        messages[0]["content"] = HELPDESK_PROMPT
 
-    # Build current user content (text + optional image)
     content = [{"type": "text", "text": message}]
 
-    if file and file.content_type and file.content_type.startswith("image/"):
+    if file:
         file_bytes = await file.read()
-        base64_image = base64.b64encode(file_bytes).decode("utf-8")
-        content.append({
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:{file.content_type};base64,{base64_image}"
-            },
-        })
+        if file.content_type and file.content_type.startswith("image/"):
+            
+            base64_image = base64.b64encode(file_bytes).decode("utf-8")
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{file.content_type};base64,{base64_image}"
+                },
+            })
+        elif file.content_type == "application/pdf":
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            page = doc[0]
+            pix = page.get_pixmap()
+            img_data = pix.tobytes("png")
+            base64_pdf_img = base64.b64encode(img_data).decode("utf-8")
+            doc.close()
+
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{base64_pdf_img}"
+                },
+            })
 
     messages.append({"role": "user", "content": content})
 
     response = client.chat.completions.create(
-        model="nvidia/nemotron-nano-12b-v2-vl:free",
+        model=MODEL_NAME,
         messages=messages,
     )
 
