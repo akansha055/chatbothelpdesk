@@ -62,14 +62,14 @@ HELPDESK_PROMPT = (
     "and suggest what office or email they should contact.\n"
 )
 
-MODEL_NAME = "nvidia/nemotron-nano-12b-v2-vl:free"  # multimodal model[web:52][web:55]
+MODEL_NAME = "nvidia/nemotron-nano-12b-v2-vl:free" 
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="<OPENROUTER_API_KEY>",  # or os.getenv("OPENROUTER_API_KEY")
+    api_key="<OPENROUTER_API_KEY>", 
 )
 
 @app.get("/")
@@ -83,14 +83,10 @@ async def chat(
     file: UploadFile = File(None),
 ):
     messages = json.loads(history)
-
-    # Ensure system prompt for helpdesk behavior
     if not messages or messages[0].get("role") != "system":
         messages.insert(0, {"role": "system", "content": HELPDESK_PROMPT})
     else:
         messages[0]["content"] = HELPDESK_PROMPT
-
-    # Build user content (text + optional file)
     content = [{"type": "text", "text": message}]
 
     if file:
@@ -123,7 +119,6 @@ async def chat(
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=messages,
-        # extra_body={"include_reasoning": True},  # optional for reasoning traces[web:12][web:54]
     )
 
     assistant_message = response.choices[0].message
